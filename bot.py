@@ -1,7 +1,8 @@
 import os
 import random
+import re
 from groq import Groq
-from atproto import Client, client_utils
+from atproto import Client, client_utils, models
 from apps_data import APPS
 
 # إعداد Groq
@@ -13,45 +14,51 @@ ACCOUNTS = [
     {"handle": "eurotrends24.bsky.social", "password": os.environ.get("EUROTRENDS24")}
 ]
 
-def generate_marketing_post(app):
-    keywords_str = ", ".join(app['keywords'])
-    # الـ Prompt الجديد مخصص للجمهور الأمريكي
-    prompt = f"""Write a viral, high-energy English marketing post for the US audience for this app: '{app['name']}'.
-    Context: {keywords_str}.
-    Guidelines:
-    - Language: Casual American English.
-    - Style: Solves a problem or highlights a cool benefit.
-    - Max 160 characters.
-    - Include 2 trending US hashtags.
-    - DO NOT include the link in the AI text, I will add it manually.
-    """
+def generate_english_post(app):
+    prompt = f"""Write a catchy 1-sentence English teaser for an app called '{app['name']}'. 
+    Topic: {', '.join(app['keywords'])}. 
+    Make it sound like a useful discovery for US users. No links, no hashtags."""
     
     completion = groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama-3.1-8b-instant",
     )
-    
-    return completion.choices[0].message.content.strip()
+    return completion.choices[0].message.content.strip().replace('"', '')
 
 def main():
     selected_app = random.choice(APPS)
+    post_content = generate_english_post(selected_app)
     
+    # إضافة هاشتاجات تريند أمريكية بشكل طبيعي في سطر منفصل
+    hashtags = " #Tech #AppStore #Android" 
+
     for acc in ACCOUNTS:
         try:
             client = Client()
             client.login(acc["handle"], acc["password"])
             
-            # 1. توليد النص الإنجليزي
-            ai_text = generate_marketing_post(selected_app)
+            # بناء المنشور مع الروابط والهاشتاجات كـ Facets لتكون "نشطة"
+            text_builder = client_utils.TextBuilder()
+            text_builder.text(f"{post_content}\n\n")
+            text_builder.tag("#TechTips", "TechTips")
+            text_builder.text(" ")
+            text_builder.tag("#MustHave", "MustHave")
+
+            # أهم جزء: إنشاء بطاقة المعاينة (Link Card)
+            # ملحوظة: Bluesky يحتاج أحياناً لرفع صورة المعاينة يدوياً أو استخدام Open Graph
+            # سنستخدم هنا الطريقة المباشرة لجعل الرابط "ظاهرياً" كبطاقة
             
-            # 2. بناء المنشور برابط "أزرق" نشط احترافي
-            tb = client_utils.TextBuilder()
-            tb.text(f"{ai_text}\n\nCheck it out here: ")
-            tb.link(selected_app['name'], selected_app['url']) # هيظهر اسم التطبيق كـ رابط أزرق
-            
-            # 3. إرسال المنشور
-            client.send_post(tb)
-            print(f"✅ Professional English post sent for {selected_app['name']} to {acc['handle']}")
+            client.send_post(
+                text=text_builder,
+                embed=models.AppBskyEmbedExternal.Main(
+                    external=models.AppBskyEmbedExternal.External(
+                        title=selected_app['name'],
+                        description=f"Get {selected_app['name']} on Google Play Store",
+                        uri=selected_app['url'],
+                    )
+                )
+            )
+            print(f"✅ Success: Link Card post for {selected_app['name']} on {acc['handle']}")
         except Exception as e:
             print(f"❌ Error on {acc['handle']}: {e}")
 
