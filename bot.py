@@ -4,10 +4,8 @@ from groq import Groq
 from atproto import Client, client_utils, models
 from apps_data import APPS
 
-# إعداد Groq بموديل حديث
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-# الحسابات (يتم جلبها من Secrets)
 ACCOUNTS = [
     {"handle": "globalpulse24.bsky.social", "password": os.environ.get("GLOBALPULSE24")},
     {"handle": "k3live.bsky.social", "password": os.environ.get("K3LIVE")},
@@ -24,32 +22,28 @@ def get_next_app():
         posted_names = []
 
     remaining_apps = [app for app in APPS if app['name'] not in posted_names]
-
     if not remaining_apps:
         remaining_apps = APPS
-        # مسح محتوى الملف للبدء من جديد
         open(HISTORY_FILE, 'w').close()
         posted_names = []
 
     selected_app = random.choice(remaining_apps)
-
     with open(HISTORY_FILE, "a") as f:
         f.write(f"{selected_app['name']}\n")
-    
     return selected_app
 
 def generate_teaser(app):
-    styles = ["viral and catchy", "problem-solving", "tech recommendation", "enthusiastic"]
+    styles = ["viral", "useful", "tech-tip", "must-try"]
     style = random.choice(styles)
-    
-    prompt = f"Write one {style} English sentence for US users about an app called '{app['name']}'. Context: {', '.join(app['keywords'])}. No hashtags, no quotes. Keep it natural."
+    # طلبنا منه يكتب الجملة بس، والهاشتاجات هنضيفها إحنا برمجياً
+    prompt = f"Write one {style} English sentence for US users about an app called '{app['name']}'. Topic: {', '.join(app['keywords'])}. Keep it short. No hashtags in the response."
     
     completion = groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama-3.1-8b-instant",
-        temperature=1.0 # لضمان عدم تكرار الجملة
+        temperature=1.0
     )
-    return completion.choices[0].message.content.strip()
+    return completion.choices[0].message.content.strip().replace('"', '')
 
 def main():
     selected_app = get_next_app()
@@ -59,13 +53,17 @@ def main():
             client = Client()
             client.login(acc["handle"], acc["password"])
             
-            # توليد نص مختلف لكل حساب في كل مرة
             post_text = generate_teaser(selected_app)
             
+            # بناء المنشور مع هاشتاجات نشطة (بتنور أزرق)
             tb = client_utils.TextBuilder()
-            tb.text(post_text)
+            tb.text(f"{post_text}\n\n")
+            tb.tag("#Tech", "Tech")
+            tb.text(" ")
+            tb.tag("#Android", "Android")
+            tb.text(" ")
+            tb.tag("#Apps", "Apps")
 
-            # إرسال المنشور مع الـ Embed (Link Card) لإظهار معاينة احترافية
             client.send_post(
                 text=tb,
                 embed=models.AppBskyEmbedExternal.Main(
@@ -76,7 +74,7 @@ def main():
                     )
                 )
             )
-            print(f"✅ Posted {selected_app['name']} to {acc['handle']}")
+            print(f"✅ Success with hashtags for {selected_app['name']} on {acc['handle']}")
         except Exception as e:
             print(f"❌ Error on {acc['handle']}: {e}")
 
