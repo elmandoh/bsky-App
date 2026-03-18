@@ -1,28 +1,24 @@
-name: Bluesky Marketing Bot
-
+name: Bluesky Multi-App Marketing
 on:
   schedule:
-    - cron: '0 */4 * * *'  # يشتغل كل 4 ساعات (تقدر تغيرها)
-  workflow_dispatch:      # عشان تقدر تشغله يدوي للتجربة
+    - cron: '0 */2 * * *' # هينشر تطبيق عشوائي كل ساعتين (12 مرة في اليوم)
+  workflow_dispatch:
 
 jobs:
-  build:
+  run-bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run Bot
+        run: pip install groq atproto
+      - name: Execute Bot
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
-          BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
+          GLOBALPULSE24: ${{ secrets.GLOBALPULSE24 }}
+          K3LIVE: ${{ secrets.K3LIVE }}
+          EUROTRENDS24: ${{ secrets.EUROTRENDS24 }}
         run: python bot.py
