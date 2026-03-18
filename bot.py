@@ -19,7 +19,7 @@ def generate_marketing_post(app):
     
     # التعديل المطلوب في دالة generate_marketing_post
   # التعديل المطلوب في دالة generate_marketing_post
-  completion = groq_client.chat.completions.create(
+   completion = groq_client.chat.completions.create(
      messages=[{"role": "user", "content": prompt}],
      model="llama-3.1-8b-instant", # ده الموديل الجديد الشغال حالياً
    )
