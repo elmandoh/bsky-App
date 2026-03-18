@@ -1,7 +1,7 @@
 name: Bluesky Multi-App Marketing
 on:
   schedule:
-    - cron: '0 */2 * * *' # هينشر تطبيق عشوائي كل ساعتين (12 مرة في اليوم)
+    - cron: '0 */1 * * *' # هينشر تطبيق عشوائي كل ساعتين (12 مرة في اليوم)
   workflow_dispatch:
 
 jobs:
