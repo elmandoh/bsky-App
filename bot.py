@@ -4,9 +4,10 @@ from groq import Groq
 from atproto import Client, client_utils, models
 from apps_data import APPS
 
-# إعداد Groq
+# إعداد Groq بموديل حديث
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
+# الحسابات (يتم جلبها من Secrets)
 ACCOUNTS = [
     {"handle": "globalpulse24.bsky.social", "password": os.environ.get("GLOBALPULSE24")},
     {"handle": "k3live.bsky.social", "password": os.environ.get("K3LIVE")},
@@ -16,40 +17,41 @@ ACCOUNTS = [
 HISTORY_FILE = "posted_history.txt"
 
 def get_next_app():
-    # قراءة التاريخ
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r") as f:
             posted_names = f.read().splitlines()
     else:
         posted_names = []
 
-    # تصفية التطبيقات اللي لسه منشرتش
     remaining_apps = [app for app in APPS if app['name'] not in posted_names]
 
-    # لو خلصناهم كلهم، صفر الملف وابدأ من جديد
     if not remaining_apps:
         remaining_apps = APPS
+        # مسح محتوى الملف للبدء من جديد
+        open(HISTORY_FILE, 'w').close()
         posted_names = []
 
     selected_app = random.choice(remaining_apps)
 
-    # تحديث التاريخ
-    posted_names.append(selected_app['name'])
-    with open(HISTORY_FILE, "w") as f:
-        f.write("\n".join(posted_names))
+    with open(HISTORY_FILE, "a") as f:
+        f.write(f"{selected_app['name']}\n")
     
     return selected_app
 
-def generate_english_teaser(app):
-    prompt = f"Write one viral, high-energy English sentence for the US audience about an app called '{app['name']}'. Context: {', '.join(app['keywords'])}. No hashtags, no links."
+def generate_teaser(app):
+    styles = ["viral and catchy", "problem-solving", "tech recommendation", "enthusiastic"]
+    style = random.choice(styles)
+    
+    prompt = f"Write one {style} English sentence for US users about an app called '{app['name']}'. Context: {', '.join(app['keywords'])}. No hashtags, no quotes. Keep it natural."
+    
     completion = groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama-3.1-8b-instant",
+        temperature=1.0 # لضمان عدم تكرار الجملة
     )
-    return completion.choices[0].message.content.strip().replace('"', '')
+    return completion.choices[0].message.content.strip()
 
 def main():
-    # 1. اختار التطبيق اللي عليه الدور (ثابت للـ 3 حسابات في الدورة الواحدة)
     selected_app = get_next_app()
     
     for acc in ACCOUNTS:
@@ -57,28 +59,26 @@ def main():
             client = Client()
             client.login(acc["handle"], acc["password"])
             
-            # 2. توليد نص جديد "مخصوص" لكل حساب
-            # كدة كل حساب هياخد جملة مختلفة عن التاني لنفس التطبيق
-            post_text = generate_english_teaser(selected_app)
+            # توليد نص مختلف لكل حساب في كل مرة
+            post_text = generate_teaser(selected_app)
             
             tb = client_utils.TextBuilder()
-            tb.text(f"{post_text}\n\n")
-            tb.tag("#TechTips", "TechTips")
-            tb.text(" ")
-            tb.tag("#Android", "Android")
+            tb.text(post_text)
 
+            # إرسال المنشور مع الـ Embed (Link Card) لإظهار معاينة احترافية
             client.send_post(
                 text=tb,
                 embed=models.AppBskyEmbedExternal.Main(
                     external=models.AppBskyEmbedExternal.External(
                         title=selected_app['name'],
-                        description="Click to view on Google Play Store",
+                        description="Check it out on Google Play Store",
                         uri=selected_app['url'],
                     )
                 )
             )
-            print(f"✅ Unique post published for {selected_app['name']} on {acc['handle']}")
+            print(f"✅ Posted {selected_app['name']} to {acc['handle']}")
         except Exception as e:
             print(f"❌ Error on {acc['handle']}: {e}")
 
-
+if __name__ == "__main__":
+    main()
