@@ -2,8 +2,9 @@ import os
 import random
 from groq import Groq
 from atproto import Client
-from apps_data import APPS # استيراد البيانات من الملف التاني
+from apps_data import APPS
 
+# إعداد Groq
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 ACCOUNTS = [
@@ -13,20 +14,17 @@ ACCOUNTS = [
 ]
 
 def generate_marketing_post(app):
-    # اطلب من Groq يكتب بوست احترافي بناءً على بيانات التطبيق
     keywords_str = ", ".join(app['keywords'])
-    prompt = f"Write a professional and catchy social media post in Arabic for an Android app named '{app['name']}'. Context: {keywords_str}. The post should be persuasive, include emojis, and end with the link: {app['url']}. Make it sound like a helpful recommendation."
+    prompt = f"Write a professional and catchy social media post in Arabic for an Android app named '{app['name']}'. Context: {keywords_str}. The post should be persuasive, include emojis, and end with the link: {app['url']}."
     
-    # التعديل المطلوب في دالة generate_marketing_post
-  # التعديل المطلوب في دالة generate_marketing_post
-   completion = groq_client.chat.completions.create(
-     messages=[{"role": "user", "content": prompt}],
-     model="llama-3.1-8b-instant", # ده الموديل الجديد الشغال حالياً
-   )
+    # تأكد من المسافات هنا (4 مسافات تحت الدالة)
+    completion = groq_client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama-3.1-8b-instant", # الموديل الأحدث والشغال
+    )
     return completion.choices[0].message.content
 
 def main():
-    # اختيار تطبيق عشوائي للنشر عنه في هذه الدورة
     selected_app = random.choice(APPS)
     
     for acc in ACCOUNTS:
@@ -34,7 +32,6 @@ def main():
             client = Client()
             client.login(acc["handle"], acc["password"])
             
-            # توليد نص مختلف لكل حساب لنفس التطبيق (لزيادة الانتشار)
             post_text = generate_marketing_post(selected_app)
             
             client.send_post(text=post_text)
