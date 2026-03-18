@@ -17,10 +17,12 @@ def generate_marketing_post(app):
     keywords_str = ", ".join(app['keywords'])
     prompt = f"Write a professional and catchy social media post in Arabic for an Android app named '{app['name']}'. Context: {keywords_str}. The post should be persuasive, include emojis, and end with the link: {app['url']}. Make it sound like a helpful recommendation."
     
-    completion = groq_client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model="llama3-8b-8192",
-    )
+    # التعديل المطلوب في دالة generate_marketing_post
+  # التعديل المطلوب في دالة generate_marketing_post
+  completion = groq_client.chat.completions.create(
+     messages=[{"role": "user", "content": prompt}],
+     model="llama-3.1-8b-instant", # ده الموديل الجديد الشغال حالياً
+   )
     return completion.choices[0].message.content
 
 def main():
