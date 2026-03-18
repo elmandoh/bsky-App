@@ -49,34 +49,35 @@ def generate_english_teaser(app):
     return completion.choices[0].message.content.strip().replace('"', '')
 
 def main():
+    # 1. اختار التطبيق اللي عليه الدور (ثابت للـ 3 حسابات في الدورة الواحدة)
     selected_app = get_next_app()
-    post_text = generate_english_teaser(selected_app)
     
     for acc in ACCOUNTS:
         try:
             client = Client()
             client.login(acc["handle"], acc["password"])
             
-            # بناء النص بالهاشتاجات بطريقة Bluesky الأصلية (بدون ما تظهر كنص ميت)
+            # 2. توليد نص جديد "مخصوص" لكل حساب
+            # كدة كل حساب هياخد جملة مختلفة عن التاني لنفس التطبيق
+            post_text = generate_english_teaser(selected_app)
+            
             tb = client_utils.TextBuilder()
             tb.text(f"{post_text}\n\n")
             tb.tag("#TechTips", "TechTips")
             tb.text(" ")
             tb.tag("#Android", "Android")
 
-            # إرسال المنشور مع "بطاقة معاينة" (Embed External)
-            # دي اللي بتعمل شكل الصندوق وبتشيل رسالة التحذير
             client.send_post(
                 text=tb,
                 embed=models.AppBskyEmbedExternal.Main(
                     external=models.AppBskyEmbedExternal.External(
                         title=selected_app['name'],
-                        description="Check out this app on Google Play!",
+                        description="Click to view on Google Play Store",
                         uri=selected_app['url'],
                     )
                 )
             )
-            print(f"✅ Success: Posted {selected_app['name']} to {acc['handle']}")
+            print(f"✅ Unique post published for {selected_app['name']} on {acc['handle']}")
         except Exception as e:
             print(f"❌ Error on {acc['handle']}: {e}")
 
