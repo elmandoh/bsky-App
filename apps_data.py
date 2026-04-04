@@ -20,7 +20,5 @@ APPS = [
     {"name": "Al Hilal Fans", "url": "https://play.google.com/store/apps/details?id=al.hilalfans", "keywords": ["football", "soccer", "al hilal", "sports", "news"]},
     {"name": "Toolify Daily Monitor", "url": "https://play.google.com/store/apps/details?id=toolify.dailytoolsusagemonitor", "keywords": ["monitor", "usage", "productivity"]},
     {"name": "DHO Productivity", "url": "https://play.google.com/store/apps/details?id=app3514831.dho", "keywords": ["task", "workflow", "management"]}
-    {"name": "LIVE: Deep Web", "url": "https://youtube.com/live/j-nyShnHdhs", "keywords": ["task", "workflow", "management"]}
-    {"name": "LIVE: Deep Web #storiesinhindi 24/7", "url": "https://www.youtube.com/@freedom-v9b/streams", "keywords": ["task", "workflow", "management"]}
 
 ]
